@@ -4,7 +4,7 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > My Tools",
-    "description": "Adds a custom mesh object",
+    "description": "Adds a custom mesh object and vertex color tools",
     "category": "Object",
 }
 
@@ -16,6 +16,10 @@ from mathutils import Vector
 
 # Import updater - make sure this module exists in your addon
 from . import addon_updater_ops
+
+# Import vertex color random modules
+from .ops.vertex_color_random import OPS_VertexColorRandom
+from .ui.vertex_color_random_ui import UI_PT_VertexColorRandom
 
 def add_object(self, context):
     scale_x = self.scale.x
@@ -54,32 +58,28 @@ class OBJECT_OT_add_object(Operator, AddObjectHelper):
         return {'FINISHED'}
 
 
-# NUEVO: Panel para la interfaz lateral
+# Panel principal que integra todas las herramientas
 class VIEW3D_PT_my_custom_panel(Panel):
     bl_label = "My Custom Tools"
     bl_idname = "VIEW3D_PT_my_custom_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "My Tools"  # Esto crea una pestaña nueva en el sidebar
+    bl_category = "My Tools"
 
     def draw(self, context):
         layout = self.layout
         
-        # Título
-        layout.label(text="Add Custom Objects")
-        
-        # Botón principal
-        row = layout.row()
-        row.operator("mesh.add_object", text="Add Custom Mesh", icon='MESH_PLANE')
-        
-        # Configuración de escala
+        # Sección: Add Objects
         box = layout.box()
-        box.label(text="Scale Settings:")
+        box.label(text="Add Objects", icon='MESH_DATA')
+        box.operator("mesh.add_object", text="Add Custom Mesh")
         
-        # Aquí podrías añadir propiedades configurables
-        # box.prop(context.scene, "my_scale_property")...
+        # Sección: Vertex Colors
+        box = layout.box()
+        box.label(text="Vertex Colors", icon='VPAINT_HLT')
+        box.operator("object.vertex_color_random", text="Random Vertex Colors")
         
-        # Información
+        # Información del addon
         layout.separator()
         layout.label(text="Check preferences for updates")
 
@@ -130,7 +130,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
 def add_object_button(self, context):
     self.layout.operator(
         OBJECT_OT_add_object.bl_idname,
-        text="Add Custom Object",  # Texto más descriptivo
+        text="Add Custom Object",
         icon='PLUGIN')
 
 
@@ -149,10 +149,14 @@ def register():
     # Register the updater first
     addon_updater_ops.register(bl_info)
 
-    # Register classes
+    # Register main classes
     bpy.utils.register_class(OBJECT_OT_add_object)
-    bpy.utils.register_class(VIEW3D_PT_my_custom_panel)  # NUEVO: Registrar el panel
+    bpy.utils.register_class(VIEW3D_PT_my_custom_panel)
     bpy.utils.register_class(DemoPreferences)
+    
+    # Register vertex color classes
+    bpy.utils.register_class(OPS_VertexColorRandom)
+    bpy.utils.register_class(UI_PT_VertexColorRandom)
     
     # Register manual map and UI
     bpy.utils.register_manual_map(add_object_manual_map)
@@ -166,9 +170,13 @@ def unregister():
     bpy.types.VIEW3D_MT_mesh_add.remove(add_object_button)
     bpy.utils.unregister_manual_map(add_object_manual_map)
     
-    # Unregister classes
+    # Unregister vertex color classes
+    bpy.utils.unregister_class(UI_PT_VertexColorRandom)
+    bpy.utils.unregister_class(OPS_VertexColorRandom)
+    
+    # Unregister main classes
     bpy.utils.unregister_class(DemoPreferences)
-    bpy.utils.unregister_class(VIEW3D_PT_my_custom_panel)  # NUEVO: Desregistrar el panel
+    bpy.utils.unregister_class(VIEW3D_PT_my_custom_panel)
     bpy.utils.unregister_class(OBJECT_OT_add_object)
 
     # Unregister the updater last
